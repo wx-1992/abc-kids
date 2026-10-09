@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>儿童ABC字母乐园</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQUJD5ZiR5ZOB5LmUIiwic2hvcnRfbmFtZSI6IkFCQyIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZmNmNmZmIiwidGhlbWVfY29sb3IiOiIjN2E5OWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjxyZWN0IHdpZHRoPScxMDAnIGhlaWdodD0nMTAwJyByeD0nMjAnIGZpbGw9JyM3YTk5ZmYnLz48dGV4dCB4PSc1MCcgdT0nNTAnIGZvbnQtZmFtaWx5PSdBcmlhbCcgZm9udC1zaXplPSc2MCcgZmlsbD0nd2hpdGUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnPkE8L3RleHQ+PC9zdmc+Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2K3htbCJ9XX0=">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto}
+body{background:#f0f7ff;padding:12px;padding-bottom:80px;}
+header{text-align:center;padding:16px 0;}
+h1{font-size:24px;color:#4477dd;margin-bottom:6px;}
+.star-info{font-size:16px;color:#ff9900;font-weight:bold;}
+.main-menu{display:flex;gap:12px;margin:16px 0;}
+.menu-btn{flex:1;padding:20px;border-radius:18px;border:none;font-size:18px;color:white;background:#7298ff;}
+.menu-btn.locked{background:#bbbbbb;}
+.letter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;}
+.letter-card{aspect-ratio:1;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;box-shadow:0 3px 8px #00000017;border:none;}
+.letter-card.learned{background:#d7f5dd;}
+.page{display:none;margin-top:12px;}
+.page.active{display:block;}
+.back-btn{background:#8899ff;color:white;border:none;padding:10px 16px;border-radius:12px;font-size:17px;margin-bottom:14px;}
+.show-char{text-align:center;font-size:100px;font-weight:bold;margin:12px 0;}
+.word-card{background:#fff;border-radius:20px;padding:20px;text-align:center;margin:10px 4px;display:none;}
+.word-card.unlock-show{display:block;}
+.word-text{font-size:28px;margin-top:8px;}
+#drawCanvas{border:3px solid #99b8ff;border-radius:16px;background:#fff;width:100%;touch-action:none;}
+.canvas-wrap{margin:12px 0;}
+.canvas-buttons{display:flex;gap:8px;margin-top:8px;}
+.canvas-buttons button{flex:1;padding:10px;border-radius:10px;border:0;font-size:16px;}
+.game-question{background:#fff;padding:24px;border-radius:20px;text-align:center;margin-top:14px;}
+.answer-buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;}
+.answer-btn{padding:20px;font-size:28px;border-radius:14px;border:none;background:#cce0ff;}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;display:flex;height:64px;box-shadow:0 -2px 7px #00000014;}
+.nav-item{flex:1;border:none;background:none;font-size:16px;color:#5577dd;}
+.tip-text{color:#666;font-size:15px;text-align:center;margin:8px 0;}
+</style>
+</head>
+<body>
+<div id="homePage" class="page active">
+<header>
+<h1>✨ABC字母乐园</h1>
+<div class="star-info">⭐星星：<span id="starCount">0</span> /26</div>
+</header>
+<div class="main-menu">
+<button class="menu-btn" id="btnLetter" onclick="openLetterPage()">🔤字母学习</button>
+<button class="menu-btn locked" id="btnWord" onclick="openWordPage()">🔒单词学习</button>
+</div>
+<p class="tip-text">先完成全部字母，解锁单词学习</p>
+<div class="letter-grid" id="letterGrid"></div>
+</div>
+
+<div id="learnPage" class="page">
+<button class="back-btn" onclick="goHome()">← 返回主页</button>
+<div class="show-char" id="bigChar">A a</div>
+<button style="width:100%;padding:14px;margin-top:12px;font-size:20px;border-radius:14px;border:0;background:#639bff;color:white" onclick="speakLetterOnly()">🔊只读字母</button>
+<div class="canvas-wrap">
+<p style="margin:8px 0;font-size:17px;">👆手指描红写字母</p>
+<canvas id="drawCanvas" height="320"></canvas>
+<div class="canvas-buttons">
+<button onclick="clearCanvas()">🗑清除画板</button>
+<button onclick="markLearned()">✅学会，获得星星</button>
+</div>
+</div>
+<div class="word-card" id="wordCard">
+<div id="wordIcon">🍎</div>
+<div class="word-text" id="wordText">Apple</div>
+<button style="width:100%;padding:12px;margin-top:10px;font-size:18px;border-radius:12px;border:0;background:#42b983;color:white" onclick="speakWordOnly()">🔊读单词</button>
+</div>
+</div>
+
+<div id="wordPage" class="page">
+<button class="back-btn" onclick="goHome()">← 返回主页</button>
+<div class="letter-grid" id="wordGrid"></div>
+</div>
+
+<div id="gamePage" class="page">
+<button class="back-btn" onclick="goHome()">← 返回主页</button>
+<div class="game-question">
+<p id="gameTip">听声音选出字母！</p>
+<div class="answer-buttons" id="answerPanel"></div>
+</div>
+</div>
+
+<div class="bottom-nav">
+<button class="nav-item" onclick="goHome()">🏠主页</button>
+<button class="nav-item" onclick="openGame()">🎮听音游戏</button>
+</div>
+
+<script>
+const letterData = [
+{upper:"A",lower:"a",word:"Apple",emoji:"🍎"},
+{upper:"B",lower:"b",word:"Ball",emoji:"⚽"},
+{upper:"C",lower:"c",word:"Cat",emoji:"🐱"},
+{upper:"D",lower:"d",word:"Dog",emoji:"🐶"},
+{upper:"E",lower:"e",word:"Egg",emoji:"🥚"},
+{upper:"F",lower:"f",word:"Fish",emoji:"🐟"},
+{upper:"G",lower:"g",word:"Goat",emoji:"🐐"},
+{upper:"H",lower:"h",word:"Hat",emoji:"🎩"},
+{upper:"I",lower:"i",word:"Ice",emoji:"🧊"},
+{upper:"J",lower:"j",word:"Juice",emoji:"🧃"},
+{upper:"K",lower:"k",word:"Kite",emoji:"🪁"},
+{upper:"L",lower:"l",word:"Lion",emoji:"🦁"},
+{upper:"M",lower:"m",word:"Monkey",emoji:"🐒"},
+{upper:"N",lower:"n",word:"Nose",emoji:"👃"},
+{upper:"O",lower:"o",word:"Orange",emoji:"🍊"},
+{upper:"P",lower:"p",word:"Pig",emoji:"🐷"},
+{upper:"Q",lower:"q",word:"Queen",emoji:"👸"},
+{upper:"R",lower:"r",word:"Rabbit",emoji:"🐰"},
+{upper:"S",lower:"s",word:"Sun",emoji:"☀️"},
+{upper:"T",lower:"t",word:"Tiger",emoji:"🐯"},
+{upper:"U",lower:"u",word:"Umbrella",emoji:"☂️"},
+{upper:"V",lower:"v",word:"Violin",emoji:"🎻"},
+{upper:"W",lower:"w",word:"Water",emoji:"💧"},
+{upper:"X",lower:"x",word:"X‑ray",emoji:"🩻"},
+{upper:"Y",lower:"y",word:"Yak",emoji:"🐂"},
+{upper:"Z",lower:"z",word:"Zoo",emoji:"🦁"}
+];
+
+let appState=JSON.parse(localStorage.getItem("abcLearnState"))||{stars:0,learned:[]};
+let currentIdx=0;
+let canvas,ctx;
+const SPEECH_RATE=0.38;
+
+function saveState(){
+  localStorage.setItem("abcLearnState",JSON.stringify(appState));
+  renderStar();renderGrid();checkWordLock();
+}
+function renderStar(){
+  document.getElementById("starCount").innerText=appState.stars;
+}
+function checkWordLock(){
+  const btnWord=document.getElementById("btnWord");
+  if(appState.learned.length>=26){
+    btnWord.classList.remove("locked");
+    btnWord.innerText="📚单词学习";
+  }else{
+    btnWord.classList.add("locked");
+    btnWord.innerText="🔒单词学习";
+  }
+}
+
+function renderGrid(){
+  const wrap=document.getElementById("letterGrid");wrap.innerHTML="";
+  letterData.forEach((item,idx)=>{
+    const btn=document.createElement("button");
+    btn.className="letter-card";
+    if(appState.learned.includes(idx)) btn.classList.add("learned");
+    btn.innerText=item.upper;
+    btn.onclick=()=>openLearn(idx);
+    wrap.appendChild(btn);
+  })
+}
+function renderWordGrid(){
+  const wrap=document.getElementById("wordGrid");wrap.innerHTML="";
+  letterData.forEach((item,idx)=>{
+    const btn=document.createElement("button");
+    btn.className="letter-card";
+    btn.innerText=item.word;
+    btn.onclick=()=>openLearn(idx);
+    wrap.appendChild(btn);
+  })
+}
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function goHome(){showPage("homePage");}
+function openLetterPage(){goHome();}
+function openWordPage(){
+  if(appState.learned.length<26){
+    alert("🔒请先学完全部26个字母解锁单词！");
+    return;
+  }
+  renderWordGrid();
+  showPage("wordPage");
+}
+
+function openLearn(idx){
+  currentIdx=idx;
+  const d=letterData[idx];
+  document.getElementById("bigChar").innerText=d.upper+" "+d.lower;
+  document.getElementById("wordIcon").innerText=d.emoji;
+  document.getElementById("wordText").innerText=d.word;
+  document.getElementById("wordCard").classList.remove("unlock-show");
+  showPage("learnPage");
+  initCanvas();
+}
+
+function speakLetterOnly(){
+  const d=letterData[currentIdx];
+  speechSynthesis.cancel();
+  const ut=new SpeechSynthesisUtterance(`${d.upper}. ${d.lower}`);
+  ut.lang="en-US";
+  ut.rate=SPEECH_RATE;
+  speechSynthesis.speak(ut);
+}
+function speakWordOnly(){
+  const d=letterData[currentIdx];
+  speechSynthesis.cancel();
+  const ut=new SpeechSynthesisUtterance(`${d.word}`);
+  ut.lang="en-US";
+  ut.rate=SPEECH_RATE;
+  speechSynthesis.speak(ut);
+}
+
+function markLearned(){
+  if(!appState.learned.includes(currentIdx)){
+    appState.learned.push(currentIdx);
+    appState.stars+=1;
+  }
+  document.getElementById("wordCard").classList.add("unlock-show");
+  saveState();
+  alert("🎉很棒！字母已学会，现在可以练习对应的单词");
+}
+
+function initCanvas(){
+  canvas=document.getElementById("drawCanvas");
+  ctx=canvas.getContext("2d");
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*2;canvas.height=rect.height*2;
+  ctx.scale(2,2);ctx.lineWidth=6;ctx.lineCap="round";ctx.strokeStyle="#4477dd";
+  clearCanvas();
+  let painting=false;
+  canvas.onpointerdown=e=>{painting=true;drawPoint(e)};
+  canvas.onpointermove=e=>{if(painting) drawPoint(e)};
+  canvas.onpointerup=()=>painting=false;
+  canvas.onpointerleave=()=>painting=false;
+  function drawPoint(e){
+    const r=canvas.getBoundingClientRect();
+    const x=e.clientX-r.left;const y=e.clientY-r.top;
+    ctx.lineTo(x,y);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y);
+  }
+}
+function clearCanvas(){
+  const rect=canvas.getBoundingClientRect();
+  ctx.clearRect(0,0,rect.width,rect.height);
+}
+
+function openGame(){
+  showPage("gamePage");runGameRound();
+}
+function runGameRound(){
+  const correctIdx=Math.floor(Math.random()*26);
+  const correct=letterData[correctIdx];
+  let opts=[correctIdx];
+  while(opts.length<4){
+    const rnd=Math.floor(Math.random()*26);
+    if(!opts.includes(rnd)) opts.push(rnd);
+  }
+  opts.sort(()=>Math.random()-0.5);
+  const panel=document.getElementById("answerPanel");panel.innerHTML="";
+  opts.forEach(oi=>{
+    const b=document.createElement("button");
+    b.className="answer-btn";b.innerText=letterData[oi].upper;
+    b.onclick=()=>{
+      if(oi===correctIdx){
+        appState.stars+=1;saveState();alert("🎉答对！+1⭐");
+      }else{alert("💔再试试哦！答案是 "+correct.upper);
+      }
+      setTimeout(runGameRound,900);
+    };
+    panel.appendChild(b);
+  })
+  speechSynthesis.cancel();
+  const ut=new SpeechSynthesisUtterance(correct.upper);
+  ut.lang="en-US";
+  ut.rate=SPEECH_RATE;
+  setTimeout(()=>speechSynthesis.speak(ut),450);
+}
+
+renderGrid();renderStar();checkWordLock();
+
+if('serviceWorker' in navigator){
+  const swcode=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(r=>caches.match(e.request))))`;
+  const blob=new Blob([swcode],{type:"application/javascript"});
+  const swurl=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swurl);
+}
+</script>
+</body>
+</html>
